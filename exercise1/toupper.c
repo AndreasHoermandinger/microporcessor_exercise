@@ -6,6 +6,7 @@
 #include "options.h"
 #include <mmintrin.h> /* MMX instrinsics  __m64 integer type  */
 #include <xmmintrin.h> /* SSE  __m128  float */
+#include <pthread.h>
 
 
 
@@ -15,10 +16,12 @@ int debug = 0;
 double *results;
 double *ratios;
 unsigned long   *sizes;
+unsigned current_size;
 
 int no_sz = 1, no_ratio =1, no_version=1;
 
 #define ARRAY_SIZE (sizeof((__128)/sizeof(int)))
+#define NUM_THREADS 4
 
 
 
@@ -45,8 +48,7 @@ static void toupper_optimised(char * text) {
     __m64 tmp_vector;
     char *c;
 
-    int length = strlen(text) / 16;
-    char char_array[16] __attribute__ ((aligned(16)));
+    int length = strlen(text);
 
     for(c = text; c < text + length; c+=8)
     {
@@ -61,6 +63,48 @@ static void toupper_optimised(char * text) {
     //if(debug)printf("%s",text);
 }
 
+static void *toupper_optimised_thread(void * text) {
+    char* t = (char*) text;
+
+    __m64 cmp_vector = _mm_set1_pi8(0x60);
+    __m64 and_vector = _mm_set1_pi8(0x20);
+    __m64 tmp_vector;
+    char *c;
+
+    int length = current_size / (NUM_THREADS);
+
+    for(c = t; c < t + length; c+=8)
+    {
+        __m64 *cv = (__m64*)c;
+
+        tmp_vector = _mm_cmpgt_pi8(*cv,cmp_vector);
+        tmp_vector = _m_pand(tmp_vector,and_vector);
+        *cv = _mm_subs_pu8(*cv, tmp_vector);
+
+
+    }
+    //if(debug)printf("%s",text);
+}
+
+
+static void toupper_optimised_parallel(char * text) {
+
+    pthread_t thread[NUM_THREADS];
+    int rc;
+    int step = current_size/NUM_THREADS;
+
+    for(int i = 0; i < NUM_THREADS; i++) {
+
+        rc = pthread_create(&thread[i], NULL, toupper_optimised_thread, (void *)(text+step*i));
+    }
+
+    for(int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(thread[i], NULL);
+    }
+
+    //if(debug)printf("%s",text);
+}
+
 static void toupper_optimised_sse(char * text) {
 
     __m128i text_vector, cmp_vector, tmp_vector, and_vector;
@@ -68,8 +112,7 @@ static void toupper_optimised_sse(char * text) {
     and_vector = _mm_set1_epi8(0x20);
     char *c;
 
-    int length = strlen(text) / 16;
-    char char_array[16] __attribute__ ((aligned(16)));
+    int length = strlen(text);
 
     for(c = text; c < text + length; c+=16)
     {
@@ -143,6 +186,7 @@ void run_toupper(int size, int ratio, int version, toupperfunc f, const char* na
 		index += version*no_sz*no_ratio;
 
     char *text = init(sizes[size], ratios[ratio]);
+    current_size = sizes[size];
 
 
     if(debug) printf("Before: %.40s...\n",text);
@@ -162,6 +206,7 @@ struct _toupperversion {
     { "simple",    toupper_simple },
     { "optimised_mmx", toupper_optimised },
     { "optimised_sse", toupper_optimised_sse },
+    { "optimised_parallel", toupper_optimised_parallel },
     { 0,0 }
 };
 
