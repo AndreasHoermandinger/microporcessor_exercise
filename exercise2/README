@@ -1,0 +1,6 @@
+HOW TO COMPILE, REGISTER AND ACCESS THE BENCHMARK AS A KERNEL MODULE 
+
+make
+sudo rmmod mod_cache_benchmark
+sudo insmod mod_cache_benchmark.ko
+sudo cat /proc/cache_benchmark
