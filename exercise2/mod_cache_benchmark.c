@@ -19,8 +19,8 @@
 
 /* cache size test parameters */
 
-#define STEP 256
-#define MAX_CACHE 512 * 1024
+#define STEP 1024 / sizeof(uint64_t)
+#define MAX_CACHE 512 * 1024 / sizeof(uint64_t)
 #define STRIDE 4160
 #define NUM_ACCESS 1000000
 
@@ -148,7 +148,7 @@ static ssize_t benchmark_read(struct file *flip, char __user *buffer, size_t buf
     if(test_cache_size >= MAX_CACHE)
     {
         test_stride = 1;
-        test_cache_size = 1024;
+        test_cache_size = STEP;
         sep = 0;
         return 0;
     }
@@ -180,7 +180,7 @@ static ssize_t benchmark_read(struct file *flip, char __user *buffer, size_t buf
     }
 
     /* cache size test */
-    test_cache_size = MAX_CACHE;
+    //test_cache_size = MAX_CACHE;
     while(pos + max_line_len <= buffer + buffer_size && test_cache_size < MAX_CACHE)
     {
         // avoid common divisors
