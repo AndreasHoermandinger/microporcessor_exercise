@@ -1,4 +1,4 @@
-#include <linux/module.h>
+.]'s'#include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/hardirq.h>
@@ -14,12 +14,12 @@
 
 /* cache line length test parameters */
 
-#define STRIDE_MAX 256
+#define STRIDE_MAX 512
 #define TEST_SIZE 1024*4096
 
 /* cache size test parameters */
 
-#define STEP 1024 / sizeof(uint64_t)
+#define STEP 64 / sizeof(uint64_t)
 #define MAX_CACHE 512 * 1024 / sizeof(uint64_t)
 #define STRIDE 4160
 #define NUM_ACCESS 1000000
@@ -35,14 +35,14 @@ int sep = 0;
 
 
 #if defined(__i386__)
-static __inline__ unsigned long long rdtsc(void)
+static __inline__ unsigned long long rdtsc1(void)
 {
     unsigned long long int x;
     __asm__ volatile(".byte 0x0f, 0x31" : "=A" (x));
     return x;
 }
 #elif defined(__x86_64__)
-static __inline__ uint64_t rdtsc(void)
+static __inline__ uint64_t rdtsc1(void)
 {
     unsigned a, d;
 
@@ -70,7 +70,7 @@ uint64_t cache_size_benchmark(int n)
 
     /* fill the test array with pointer values */
 
-    for(i=0; i<n; i++) 
+    for(i=0; i<n; i++)
         test_vector[i] = ((uint64_t)(test_vector + i * sizeof(uint64_t) + stride)) % n;
 
     /* run the benchmark */
@@ -86,9 +86,9 @@ uint64_t cache_size_benchmark(int n)
 
     for(i=0; i<NUM_ACCESS; i++)
     {
-        begin = rdtsc();
+        begin = rdtsc1();
         next_address = test_vector[next_address];
-        end = rdtsc();
+        end = rdtsc1();
         value += next_address;
         total_time += (end-begin);
     }
@@ -98,10 +98,10 @@ uint64_t cache_size_benchmark(int n)
     /* clean up and return the result */
 
     kfree(test_vector);
-    return total_time; 
+    return total_time;
 }
 
-uint64_t cache_line_length_benchmark(int stride) 
+uint64_t cache_line_length_benchmark(int stride)
 {
     unsigned char *test_vector;
     unsigned char seed = 0;
@@ -111,7 +111,7 @@ uint64_t cache_line_length_benchmark(int stride)
     /* allocate the test array and fill it with random values */
 
     test_vector = kmalloc(TEST_SIZE * sizeof(char), GFP_KERNEL);
-    seed = rdtsc() >> (sizeof(uint64_t) - 1);
+    seed = rdtsc1() >> (sizeof(uint64_t) - 1);
     for(i=0; i<TEST_SIZE; i++) test_vector[i] = seed + i*stride;
 
     /* run the benchmark */
@@ -120,9 +120,9 @@ uint64_t cache_line_length_benchmark(int stride)
     raw_local_irq_save(flags);
     for (i=0; i<num_access; i++)
     {
-        begin = rdtsc();
+        begin = rdtsc1();
         sum += test_vector[index];
-        end = rdtsc();
+        end = rdtsc1();
 
         total_time += (end-begin);
         index += stride;
@@ -217,4 +217,3 @@ static void __exit benchmod_exit(void)
 
 module_init(benchmod_init);
 module_exit(benchmod_exit);
-
