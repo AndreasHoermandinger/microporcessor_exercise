@@ -13,10 +13,36 @@ $30MB$ Cache and $64B$ Line size $\rightarrow 491520$ Lines\\
 2 extra Bits per line needed for MESI Protocol $\rightarrow 120 KB$ needed
 
 \subsection*{2}
-
+\begin{center}
+  \begin{tabular}{ | l | l | l | l | l |}
+    \hline
+    State & M & E & S & I\\ \hline
+    M & F & F & T & T \\ \hline
+    E & F & T & T & T \\ \hline
+    S & T & T & F & T \\ \hline
+    I & T & T & T & T \\ \hline
+  \end{tabular}
+\end{center}
 
 
 \subsection*{3}
+
+\begin{center}
+  \begin{tabular}{ | c | l | l | l | l | l | c |}
+    \hline
+    Step & Operation(Proc) & C0 & C1 & C2 & C3 & Comments\\ \hline
+    0 &  & I & I & I & I & \\ \hline
+    1 & read (P0) & E & I & I & I & \\ \hline
+    2 & write (P0) & M & I & I & I & \\ \hline
+    3 & read (P1) & M & S & I & I & \\ \hline
+    4 & write (P2) & I & I & M & I &\\ \hline
+    5 & read (P2) & I & I & M & I & \\ \hline
+    6 & read (P3) & I & I & M & S & \\ \hline
+    7 & write (P0) & M & I & I  & I &\\ \hline
+    8 & write (P1) & I & M & I & I & \\ \hline
+    9 & read (P0) & S & M & I & I & \\ \hline
+  \end{tabular}
+\end{center}
 
 
 \end{document}
