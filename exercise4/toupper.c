@@ -4,9 +4,7 @@
 #include <errno.h>
 #include <sys/time.h>
 #include "options.h"
-#include <mmintrin.h> /* MMX instrinsics  __m64 integer type  */
-#include <xmmintrin.h> /* SSE  __m128  float */
-
+#include <arm_neon.h>
 
 
 
@@ -37,6 +35,36 @@ static void toupper_simple(char * text) {
         if(*c >= 0x61) *c = ((char)*c - 0x20);
 }
 
+static void toupper_optimised_neon128(char *text) {
+
+    int8x16_t cmp_v = vdupq_n_s8(0x60);		// Create an 128bit vector (16 x int8) and fill it with scalar.
+    int8x16_t and_v = vdupq_n_s8(0x20);
+    int8x16_t str_v;
+    int8x16_t tmp_v;
+
+    int length = strlen(text);
+    int modulus = length % 64;
+
+    int i, j;
+    for (i = 0; i < length - modulus; i += 16) {
+      // load chunks of 16 characters of the text into the vector register
+      for (j = 0; j < 16; j++) {
+        str_v = vldlq_s8(&text[i+j]);
+      }
+
+      tmp_v = vcgtq_s8(str_v, cmp_v);
+      tmp_v = vandq_s8(tmp_v, and_v);
+      str_v = vsubq_s8(str_v, tmp_v);
+
+      // store chunks of 16 characters back to the text array
+      for (j = 0; j < 16; j++) {
+        vstlq_s8(&text[i+j], str_v);
+      }
+    }
+
+    // finally check the remaining text for lower case letters
+    // TODO
+}
 
 /*static void toupper_optimised(char * text) {
 
