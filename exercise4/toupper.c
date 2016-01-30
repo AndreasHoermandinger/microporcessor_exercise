@@ -37,10 +37,10 @@ static void toupper_simple(char * text) {
 
 static void toupper_optimised_neon128(char *text) {
 
-    int8x16_t cmp_v = vdupq_n_s8(0x60);		// Create an 128bit vector (16 x int8) and fill it with scalar.
-    int8x16_t and_v = vdupq_n_s8(0x20);
-    int8x16_t str_v;
-    int8x16_t tmp_v;
+    uint8x16_t cmp_v = vdupq_n_u8(0x60);		// Create an 128bit vector (16 x int8) and fill it with scalar.
+    uint8x16_t and_v = vdupq_n_u8(0x20);
+    uint8x16_t str_v;
+    uint8x16_t tmp_v;
 
     int length = strlen(text);
     int modulus = length % 64;
@@ -49,16 +49,16 @@ static void toupper_optimised_neon128(char *text) {
     for (i = 0; i < length - modulus; i += 16) {
       // load chunks of 16 characters of the text into the vector register
       for (j = 0; j < 16; j++) {
-        str_v = vldlq_s8(&text[i+j]);
+        str_v = vld1q_u8(&text[i+j]);
       }
 
-      tmp_v = vcgtq_s8(str_v, cmp_v);
-      tmp_v = vandq_s8(tmp_v, and_v);
-      str_v = vsubq_s8(str_v, tmp_v);
+      tmp_v = vcgtq_u8(str_v, cmp_v);
+      tmp_v = vandq_u8(tmp_v, and_v);
+      str_v = vsubq_u8(str_v, tmp_v);
 
       // store chunks of 16 characters back to the text array
       for (j = 0; j < 16; j++) {
-        vstlq_s8(&text[i+j], str_v);
+        vst1q_u8(&text[i+j], str_v);
       }
     }
 
@@ -189,9 +189,10 @@ struct _toupperversion {
     toupperfunc func;
 } toupperversion[] = {
     { "simple",    toupper_simple },
-    { "optimised_mmx", toupper_optimised },
-    { "optimised_sse", toupper_optimised_sse },
-    { "optimised_parallel", toupper_optimised_parallel },
+//    { "optimised_mmx", toupper_optimised },
+//    { "optimised_sse", toupper_optimised_sse },
+//    { "optimised_parallel", toupper_optimised_parallel },
+    { "optimized_neon128", toupper_optimised_neon128 },
     { 0,0 }
 };
 
