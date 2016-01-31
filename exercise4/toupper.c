@@ -48,18 +48,17 @@ static void toupper_optimised_neon128(char *text) {
     int i, j;
     for (i = 0; i < length - modulus; i += 16) {
       // load chunks of 16 characters of the text into the vector register
-      for (j = 0; j < 16; j++) {
-        str_v = vld1q_u8(&text[i+j]);
-      }
+      
+      str_v = vld1q_u8(&text[i]);
+      
 
       tmp_v = vcgtq_u8(str_v, cmp_v);
       tmp_v = vandq_u8(tmp_v, and_v);
       str_v = vsubq_u8(str_v, tmp_v);
 
       // store chunks of 16 characters back to the text array
-      for (j = 0; j < 16; j++) {
-        vst1q_u8(&text[i+j], str_v);
-      }
+      
+      vst1q_u8(&text[i+j], str_v);
     }
     
     
@@ -67,18 +66,18 @@ static void toupper_optimised_neon128(char *text) {
     
     str_v = vdupq_n_u8(0x00);
     
-    for (j = 0; j < modulus; j++) {
-        str_v = vld1q_u8(&text[i+j]);
-      }
+    
+      str_v = vld1q_u8(&text[i]);
+      
 
       tmp_v = vcgtq_u8(str_v, cmp_v);
       tmp_v = vandq_u8(tmp_v, and_v);
       str_v = vsubq_u8(str_v, tmp_v);
 
       // store chunks of 16 characters back to the text array
-      for (j = 0; j < modulus; j++) {
-        vst1q_u8(&text[i+j], str_v);
-      }
+      
+      vst1q_u8(&text[i], str_v);
+      
 
     // finally check the remaining text for lower case letters
     // TODO
