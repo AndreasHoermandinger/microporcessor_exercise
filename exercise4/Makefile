@@ -10,25 +10,18 @@ VARIANTS += $(PROGRAM)_variant2
 VARIANTS += $(PROGRAM)_variant3 
 VARIANTS += $(PROGRAM)_variant4
 VARIANTS += $(PROGRAM)_variant5
-VARIANTS += $(PROGRAM)_variant6
-VARIANTS += $(PROGRAM)_variant7
-VARIANTS += $(PROGRAM)_variant8
-VARIANTS += $(PROGRAM)_variant9 
+
 
 
 ICC = icc -fsource-asm -fno-alias -lm -pthread $(sources)
-GCC = gcc -lm -march=native -g -pthread $(sources)
-CLANG = clang -lm -march=native -g -pthread $(sources)
+GCC = arm-linux-gnueabihf-gcc -mfpu=neon -lm -march=native -g $(sources)
 
 $(PROGRAM)_variant1 = $(GCC) -O0 
 $(PROGRAM)_variant2 = $(GCC) -O1
 $(PROGRAM)_variant3 = $(GCC) -O2
 $(PROGRAM)_variant4 = $(GCC) -O3
 $(PROGRAM)_variant5 = $(GCC) -Ofast
-$(PROGRAM)_variant6 = $(CLANG) -O0
-$(PROGRAM)_variant7 = $(CLANG) -O1
-$(PROGRAM)_variant8 = $(CLANG) -O2
-$(PROGRAM)_variant9 = $(CLANG) -O3
+
 
 PARAMS = 80000
 
