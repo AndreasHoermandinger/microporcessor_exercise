@@ -35,52 +35,64 @@ static void toupper_simple(char * text) {
         if(*c >= 0x61) *c = ((char)*c - 0x20);
 }
 
+static void toupper_optimised_neon64(char *text) {
+
+    uint8x8_t cmp_v = vdup_n_u8(0x60);		// Create an 64bit vector (8 x int8) and fill it with scalar.
+    uint8x8_t and_v = vdup_n_u8(0x20);
+    uint8x8_t str_v;
+    uint8x8_t tmp_v;
+
+    int length = strlen(text);
+    int modulus = length % 8;	// needed to check if can fill the last vector
+
+    int i, j;
+    for (i = 0; i < length - modulus; i += 8) {
+      // load chunks of 8 characters into the vector
+      str_v = vld1_u8(&text[i]);
+
+      tmp_v = vcgt_u8(str_v, cmp_v);
+      tmp_v = vand_u8(tmp_v, and_v);
+      str_v = vsub_u8(str_v, tmp_v);
+
+      // store chunks of 8 characters back to the text array
+      vst1_u8(&text[i], str_v);
+    }
+
+    // finally check the remaining text for lower case letters
+    // TODO
+    if (modulus != 0) {
+      toupper_simple(&text[length - modulus]);
+    }
+}
+
 static void toupper_optimised_neon128(char *text) {
 
-    uint8x16_t cmp_v = vdupq_n_u8(0x60);		// Create an 128bit vector (16 x int8) and fill it with scalar.
+    uint8x16_t cmp_v = vdupq_n_u8(0x60);                // Create an 128bit vector (16 x int8) and fill it with scalar.
     uint8x16_t and_v = vdupq_n_u8(0x20);
     uint8x16_t str_v;
     uint8x16_t tmp_v;
 
     int length = strlen(text);
-    int modulus = length % 64;
+    int modulus = length % 16; 
 
     int i, j;
     for (i = 0; i < length - modulus; i += 16) {
       // load chunks of 16 characters of the text into the vector register
-      
       str_v = vld1q_u8(&text[i]);
-      
 
       tmp_v = vcgtq_u8(str_v, cmp_v);
       tmp_v = vandq_u8(tmp_v, and_v);
       str_v = vsubq_u8(str_v, tmp_v);
 
       // store chunks of 16 characters back to the text array
-      
-      vst1q_u8(&text[i+j], str_v);
-    }
-    
-    
-    i = length - modulus;
-    
-    str_v = vdupq_n_u8(0x00);
-    
-    
-      str_v = vld1q_u8(&text[i]);
-      
-
-      tmp_v = vcgtq_u8(str_v, cmp_v);
-      tmp_v = vandq_u8(tmp_v, and_v);
-      str_v = vsubq_u8(str_v, tmp_v);
-
-      // store chunks of 16 characters back to the text array
-      
       vst1q_u8(&text[i], str_v);
-      
+    }
 
     // finally check the remaining text for lower case letters
     // TODO
+    if (modulus != 0) {
+      toupper_simple(&text[length - modulus]);
+    }
 }
 
 /*static void toupper_optimised(char * text) {
@@ -208,7 +220,8 @@ struct _toupperversion {
     { "simple",    toupper_simple },
 //    { "optimised_mmx", toupper_optimised },
 //    { "optimised_sse", toupper_optimised_sse },
-//    { "optimised_parallel", toupper_optimised_parallel },
+//    { "optimised_parallel", toupper_optimised_parallel },  
+    { "optimized_neon64", toupper_optimised_neon64 },
     { "optimized_neon128", toupper_optimised_neon128 },
     { 0,0 }
 };
